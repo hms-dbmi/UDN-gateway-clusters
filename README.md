@@ -24,7 +24,7 @@ The jupyter notebook Data_analysis_UDN comprises all the code used for analyses 
 
 The file clusters_un.txt is the list of clusters used for the analysis. Community detection is non-deterministic, so these clusters are susceptable to change if code is re-run. 
 
-To use the clusters analyzed in the publication, replace ```bash clusters_un ``` by that downloaded from clusters_un.txt when the community-louvain method is run. 
+To use the clusters analyzed in the publication, replace ``` clusters_un ``` by that downloaded from clusters_un.txt when the community-louvain method is run. 
 
 ## Publication
 This code supports the analysis presented in the following article : XXXX
