@@ -18,6 +18,8 @@ PicSureClient
 ```
 
 Here are the repo links to [PicSureHpdsLib](https://github.com/hms-dbmi/pic-sure-python-adapter-hpds) and [PicSureClient](https://github.com/hms-dbmi/pic-sure-python-client)
+## Authorizations
+To have access to the UDN data, you will need IRB approval. When it is the case, you will need a token to log into the database, to add in the PicSureClient to connect.
 
 ## How to
 The jupyter notebook Data_analysis_UDN comprises all the code used for analyses of the UDN database.
