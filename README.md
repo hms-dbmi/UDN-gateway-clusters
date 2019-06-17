@@ -1,6 +1,9 @@
 # UDN-analysis
 Jupyter Notebook for conducting analysis on UDN data and creation and analysis of clusters
 
+## Missing data
+The genomic data files are accessed through the JSON raw file. If you have approved access to the data, I can forward you the associated files used for genomic and variant data.
+
 ## Prerequisites
 The following libraries must be installed: 
 ```bash
