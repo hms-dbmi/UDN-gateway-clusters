@@ -3,7 +3,7 @@ Jupyter Notebook for conducting analysis on UDN data and creation and analysis o
 
 ## Missing data
 The genomic data files are accessed through the JSON raw file. If you have approved access to the data, I can forward you the associated files used for genomic and variant data.
-The clusters are computed with a non deterministic algorithms. To have the exact clusters analyze, if you have approved access to the data, I can forward you the associated file.
+The clusters are computed with a non deterministic algorithm. To have the exact clusters analyze, if you have approved access to the data, I can forward you the associated file.
 
 ## Prerequisites
 The following libraries must be installed: 
