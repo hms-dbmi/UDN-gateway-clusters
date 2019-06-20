@@ -1,9 +1,8 @@
 # UDN-analysis
 Jupyter Notebook for conducting analysis on UDN data and creation and analysis of clusters
 
-## Missing data
-The genomic data files are accessed through the JSON raw file. If you have approved access to the data, I can forward you the associated files used for genomic and variant data.
-The clusters are computed with a non deterministic algorithm. To have the exact clusters analyzed in the paper, and if you have approved access to the data, I can forward you the associated file.
+## Clusters
+The clusters are computed with a non deterministic algorithm. To have the exact clusters analyzed in the paper, and if you have approved access to the data, I can forward the associated file.
 
 ## Prerequisites
 The following libraries must be installed: 
@@ -28,8 +27,6 @@ To have access to the UDN data, you will need IRB approval. When it is the case,
 ## How to
 The jupyter notebook Data_analysis_UDN comprises all the code used for analyses of the UDN database.
 
-The file clusters_un.txt is the list of clusters used for the analysis. Community detection is non-deterministic, so these clusters are susceptable to change if code is re-run. 
-
 To use the clusters analyzed in the publication, replace ``` clusters_un ``` by that downloaded from clusters_un.txt when the community-louvain method is run. 
 
 ## Publication
@@ -37,4 +34,14 @@ This code supports the analysis presented in the following article : XXXX
 
 ## License
 
-None for now
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
