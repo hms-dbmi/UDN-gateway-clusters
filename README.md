@@ -13,11 +13,13 @@ matplotlib
 seaborn
 community
 networkx
-collection
+collections
 os
 xml.etree.ElementTree
 PicSureHpdsLib
 PicSureClient
+operator
+pandas
 ```
 
 Here are the repo links to [PicSureHpdsLib](https://github.com/hms-dbmi/pic-sure-python-adapter-hpds) and [PicSureClient](https://github.com/hms-dbmi/pic-sure-python-client)
@@ -27,7 +29,6 @@ To have access to the UDN data, you will need IRB approval. When it is the case,
 ## How to
 The jupyter notebook Data_analysis_UDN comprises all the code used for analyses of the UDN database.
 
-To use the clusters analyzed in the publication, replace ``` clusters_un ``` by that downloaded from clusters_un.txt when the community-louvain method is run. 
 
 ## Publication
 This code supports the analysis presented in the following article : XXXX
