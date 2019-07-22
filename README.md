@@ -27,11 +27,11 @@ Here are the repo links to [PicSureHpdsLib](https://github.com/hms-dbmi/pic-sure
 To have access to the UDN data, you will need IRB approval. When it is the case, you will need a token to log into the database, to add in the PicSureClient to connect.
 
 ## How to
-The jupyter notebook Data_analysis_UDN comprises all the code used for analyses of the UDN database.
+The jupyter notebook Data_analysis_UDN comprises all the code used for the analysis of the UDN database. The jupyter notebook UDN_validation_in_Aetna comprises the SQL code used to validate the results in the Aetna claims database.
 
 
 ## Publication
-This code supports the analysis presented in the following article : XXXX
+This code supports the analysis presented in the Finding Commonalities in rare diseases through the Undiagnosed Diseases Network (publication to come).
 
 ## License
 
