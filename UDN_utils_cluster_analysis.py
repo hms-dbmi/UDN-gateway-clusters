@@ -1,5 +1,15 @@
-"""TODO description & libraries
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
+Functions for cluster analysis
+
+"""
+
+__author__ = "Josephine Yates"
+__email__ = "josephine.yates@yahoo.fr"
+
+from UDN_utils import *
+
 import argparse
 import sys
 import numpy as np
@@ -18,11 +28,12 @@ import xml.etree.ElementTree as ET
 import operator
 import pandas
 import csv
-from scipy.stats import mannwhitneyu
+from scipy.stats import mannwhitneyu, chisquare
 from sklearn.metrics.pairwise import pairwise_distances
 from docx import Document
 from docx.shared import Inches
 import ast
+import logging
 
 import PicSureHpdsLib
 import PicSureClient
@@ -117,10 +128,13 @@ def get_HPO_count(patients_clustered,HPO_terms):
     CI_HPO_clusters = {cluster: get_CI(HPO_cluster[cluster]) for cluster in patients_clustered.keys()}
     return HPO_cluster,avg_HPO_clusters,CI_HPO_clusters
 
-def get_phen_ranked(clusters_un,ind_groups):
+def get_phen_ranked(clusters_un, patient_phen, ind_groups):
     """get the count of HPO terms for patients in the cluster, and the average
     Parameters: clusters_un (dict): dictionary with cluster number as key and list of patients in cluster as value
                 ind_groups (list): list of clusters to analyze
+                patient_phen (dict): dictionary of unique phenotypes associated with each patient; 
+                        key is patient, value is dictionary with key "pos" or "neg" 
+                        and value list of unique phenotypes with positive or negative association
     Returns: phen_ranked_pos (dict): dictionary with cluster as key, array of sorted positive 
                             phenotypes and proportion values as value
             phen_ranked_neg (dict): dictionary with cluster as key, array of sorted negative 

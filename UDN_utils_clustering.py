@@ -1,5 +1,13 @@
-"""TODO description & libraries
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
+Functions for clustering
+
+"""
+
+__author__ = "Josephine Yates"
+__email__ = "josephine.yates@yahoo.fr"
+
 import argparse
 import sys
 import numpy as np
@@ -18,11 +26,12 @@ import xml.etree.ElementTree as ET
 import operator
 import pandas
 import csv
-from scipy.stats import mannwhitneyu
+from scipy.stats import mannwhitneyu, chisquare
 from sklearn.metrics.pairwise import pairwise_distances
 from docx import Document
 from docx.shared import Inches
 import ast
+import logging
 
 import PicSureHpdsLib
 import PicSureClient

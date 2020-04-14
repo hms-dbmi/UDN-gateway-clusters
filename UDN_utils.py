@@ -1,8 +1,12 @@
-### All functions used to perform the UDN analysis 
-
-"""TODO write description
-    TODO comment all functions
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
+General functions and plotting functions
+
+"""
+
+__author__ = "Josephine Yates"
+__email__ = "josephine.yates@yahoo.fr"
 
 import argparse
 import sys
@@ -22,11 +26,12 @@ import xml.etree.ElementTree as ET
 import operator
 import pandas
 import csv
-from scipy.stats import mannwhitneyu
+from scipy.stats import mannwhitneyu, chisquare
 from sklearn.metrics.pairwise import pairwise_distances
 from docx import Document
 from docx.shared import Inches
 import ast
+import logging
 
 import PicSureHpdsLib
 import PicSureClient

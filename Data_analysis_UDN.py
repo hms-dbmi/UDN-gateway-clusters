@@ -1,8 +1,28 @@
-
-# coding: utf-8
-"""TODO write description
-    TODO comment all functions
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
+This script is to conduct the main analysis of the UDN database:
+ * Download data using PIC SURE API
+ * Analysis of UDN database breaking down patients in adult and pediatric population
+ both diagnosed and undiagnosed
+ * Clustering of adult and pediatric network using phenotypic similarity with Louvain method
+ * Analysis of clusters from a statistical and a phenotypic standpoint
+ * Disease enrichment analysis using Orphanet database
+
+example usage from CLI:
+ $ python Data_analysis_UDN.py --token personal_token 
+                            --json_file "path/to/file" 
+                            --genes_file "path/to/gene/info" 
+                            -- variants_file "path/to/variant/info" 
+
+For help, run:
+ $ Data_analysis_UDN.py -h
+
+"""
+
+__author__ = "Josephine Yates"
+__email__ = "josephine.yates@yahoo.fr"
+
 # # Data analysis of UDN patients
 from UDN_utils import *
 from UDN_utils_cluster_analysis import *
@@ -31,11 +51,12 @@ import xml.etree.ElementTree as ET
 import operator
 import pandas
 import csv
-from scipy.stats import mannwhitneyu
+from scipy.stats import mannwhitneyu, chisquare
 from sklearn.metrics.pairwise import pairwise_distances
 from docx import Document
 from docx.shared import Inches
 import ast
+import logging
 
 import PicSureHpdsLib
 import PicSureClient
@@ -53,16 +74,16 @@ def download_data(resource, logger):
     """
 
     # download patient data from the server
-    phenotypes = get_data_df("\\04_Clinical symptoms and physical findings (in HPO, from PhenoTips)\\")
-    status = get_data_df("\\13_Status\\")
-    genes=get_data_df("\\11_Candidate genes\\")
-    variants=get_data_df("\\12_Candidate variants\\")
-    primary_symptoms=get_data_df("\\01_Primary symptom category reported by patient or caregiver\\")
-    clinical_site=get_data_df('\\03_UDN Clinical Site\\')
-    family_history=get_data_df("\\08_Family history (from PhenoTips)\\")
-    natal_history=get_data_df("\\09_Prenatal and perinatal history (from PhenoTips)\\")
-    demographics=get_data_df("\\00_Demographics\\")
-    diagnostics=get_data_df('\\14_Disorders (in OMIM, from PhenoTips)\\')
+    phenotypes = get_data_df("\\04_Clinical symptoms and physical findings (in HPO, from PhenoTips)\\", resource)
+    status = get_data_df("\\13_Status\\", resource)
+    genes=get_data_df("\\11_Candidate genes\\", resource)
+    variants=get_data_df("\\12_Candidate variants\\", resource)
+    primary_symptoms=get_data_df("\\01_Primary symptom category reported by patient or caregiver\\", resource)
+    clinical_site=get_data_df('\\03_UDN Clinical Site\\', resource)
+    family_history=get_data_df("\\08_Family history (from PhenoTips)\\", resource)
+    natal_history=get_data_df("\\09_Prenatal and perinatal history (from PhenoTips)\\", resource)
+    demographics=get_data_df("\\00_Demographics\\", resource)
+    diagnostics=get_data_df('\\14_Disorders (in OMIM, from PhenoTips)\\', resource)
 
     # select only the phenotypes, and not the prenatal phenotypes
     columns_to_del=[]
@@ -71,8 +92,8 @@ def download_data(resource, logger):
             columns_to_del.append(col)
     phenotypes=phenotypes.drop(columns_to_del,axis=1)
 
-    # information not in the gateway
-    demographics["\\00_Demographics\\Age at symptom onset in years\\"].loc[patient_not_in_gateway]=0.3
+    # information not in the gateway, example update
+    #demographics["\\00_Demographics\\Age at symptom onset in years\\"].loc[patient_not_in_gateway]=0.3
     
     return phenotypes, status, genes, variants, primary_symptoms, clinical_site, \
                     family_history, natal_history, demographics, diagnostics
@@ -126,10 +147,8 @@ def patient_breakdown(patient_phen, demographics, status, phenotypes, logger):
     list_pediatric_undiagnosed=[patient for patient in patient_phen if \
             (patient in pediatric_patients) and (patient in list_undiagnosed_phen)]
 
-    
+    HPO_terms = get_HPO_terms(patient_phen, all_patients)
     HPO_list_pos, HPO_list_neg, HPO_list = get_HPO_count_list(patient_phen, all_patients)
-    HPO_list_pos_adult, HPO_list_neg_adult, HPO_list_adult = get_HPO_count_list(patient_phen, adult_patients)
-    HPO_list_pos_ped, HPO_list_neg_ped, HPO_list_ped = get_HPO_count_list(patient_phen, pediatric_patients)
     HPO_list_pos_adult_diagnosed,HPO_list_neg_adult_diagnosed,HPO_list_adult_diagnosed = \
         get_HPO_count_list(patient_phen, list_adult_diagnosed)
     HPO_list_pos_adult_undiagnosed,HPO_list_neg_adult_undiagnosed,HPO_list_adult_undiagnosed = \
@@ -139,13 +158,15 @@ def patient_breakdown(patient_phen, demographics, status, phenotypes, logger):
     HPO_list_pos_pediatric_undiagnosed,HPO_list_neg_pediatric_undiagnosed,HPO_list_pediatric_undiagnosed = \
         get_HPO_count_list(patient_phen, list_pediatric_undiagnosed)
     # log the stats on the HPO counts
-    show_stats_HPO_counts(HPO_list,HPO_list_pos,HPO_list_neg)
-    show_stats_HPO_counts(HPO_list_adult_diagnosed,HPO_list_pos_adult_diagnosed,HPO_list_neg_adult_diagnosed)
-    show_stats_HPO_counts(HPO_list_adult_undiagnosed,HPO_list_pos_adult_undiagnosed,HPO_list_neg_adult_undiagnosed)
+    show_stats_HPO_counts(HPO_list,HPO_list_pos,HPO_list_neg, logger)
+    show_stats_HPO_counts(HPO_list_adult_diagnosed, \
+        HPO_list_pos_adult_diagnosed,HPO_list_neg_adult_diagnosed, logger)
+    show_stats_HPO_counts(HPO_list_adult_undiagnosed, \
+        HPO_list_pos_adult_undiagnosed,HPO_list_neg_adult_undiagnosed, logger)
     show_stats_HPO_counts(HPO_list_pediatric_diagnosed, \
-        HPO_list_pos_pediatric_diagnosed,HPO_list_neg_pediatric_diagnosed)
+        HPO_list_pos_pediatric_diagnosed,HPO_list_neg_pediatric_diagnosed, logger)
     show_stats_HPO_counts(HPO_list_pediatric_undiagnosed,HPO_list_pos_pediatric_undiagnosed, \
-                            HPO_list_neg_pediatric_undiagnosed)
+        HPO_list_neg_pediatric_undiagnosed, logger)
 
     # plot HPO term distribution
     logger.info("Plotting HPO distribution, for all, positive and negative terms.")
@@ -159,7 +180,7 @@ def patient_breakdown(patient_phen, demographics, status, phenotypes, logger):
 
     return phenotypes_diagnosed, phenotypes_undiagnosed, list_diagnosed_phen, list_undiagnosed_phen, \
             list_adult_diagnosed, list_adult_undiagnosed, list_pediatric_diagnosed, list_pediatric_undiagnosed, \
-            adult_patients, pediatric_patients
+            adult_patients, pediatric_patients, HPO_terms, all_patients
 
 # ### HPO large group stats
 
@@ -175,19 +196,26 @@ def HPO_large_group_analysis(phenotypes, patient_phen, adult_patients, pediatric
     list_phenotypes_unique = get_phen_to_lg(phenotypes)
     logger.info("Getting count of large groups")
     # get the HPO occurrences for all patients
-    large_groups_HPO_count=get_large_groups_HPO_count(large_groups_HPO,patient_phen,all_patients)
+    large_groups_HPO_count=get_large_groups_HPO_count(list_phenotypes_unique, \
+        large_groups_HPO,patient_phen,all_patients)
+
     logger.info("Total : neg : ",np.sum(list(large_groups_HPO_count["neg"].values())), \
-                " pos : ",np.sum(list(large_groups_HPO_count["pos"].values())))
+        " pos : ",np.sum(list(large_groups_HPO_count["pos"].values())))
 
     # get the count of large groups for positive and negative terms of adult patients
-    large_groups_HPO_count_adult=get_large_groups_HPO_count(large_groups_HPO,patient_phen,adult_patients)
+    large_groups_HPO_count_adult=get_large_groups_HPO_count(list_phenotypes_unique, \
+        large_groups_HPO,patient_phen,adult_patients)
+
     logger.info("Total adult : neg : ",np.sum(list(large_groups_HPO_count_adult["neg"].values())), \
                 " pos : ",np.sum(list(large_groups_HPO_count_adult["pos"].values())))
 
     # get the count of large groups for positive and negative terms of pediatric patients
-    large_groups_HPO_count_pediatric=get_large_groups_HPO_count(large_groups_HPO,patient_phen,pediatric_patients)
+    large_groups_HPO_count_pediatric=get_large_groups_HPO_count(list_phenotypes_unique, \
+        large_groups_HPO,patient_phen,pediatric_patients)
+
     logger.info("Total pediatric : neg : ",np.sum(list(large_groups_HPO_count_pediatric["neg"].values())), \
                 " pos : ",np.sum(list(large_groups_HPO_count_pediatric["pos"].values())))
+
     return list_phenotypes_unique, large_groups_HPO
 
 # ### Comparison HPO and Primary Symptoms
@@ -217,7 +245,6 @@ def stats_metadata(demographics, clinical_site, primary_symptoms,
     clinical_site_pediatric_diagnosed = clinical_site.loc[list_pediatric_diagnosed]
     clinical_site_pediatric_undiagnosed = clinical_site.loc[list_pediatric_undiagnosed]
 
-    cscount = clinical_site.groupby('\\03_UDN Clinical Site\\')['Patient ID'].nunique()
     cscount_ad = clinical_site_adult_diagnosed.groupby('\\03_UDN Clinical Site\\')['Patient ID'].nunique()
     cscount_and = clinical_site_adult_undiagnosed.groupby('\\03_UDN Clinical Site\\')['Patient ID'].nunique()
     cscount_pd = clinical_site_pediatric_diagnosed.groupby('\\03_UDN Clinical Site\\')['Patient ID'].nunique()
@@ -229,8 +256,6 @@ def stats_metadata(demographics, clinical_site, primary_symptoms,
     primary_symptoms_pd = primary_symptoms.loc[list_pediatric_diagnosed]
     primary_symptoms_pnd = primary_symptoms.loc[list_pediatric_undiagnosed]
 
-    scount = primary_symptoms.groupby(
-        "\\01_Primary symptom category reported by patient or caregiver\\")['Patient ID'].nunique()
     pscount_ad = primary_symptoms_ad.groupby(
         "\\01_Primary symptom category reported by patient or caregiver\\")['Patient ID'].nunique()
     pscount_and = primary_symptoms_and.groupby(
@@ -272,9 +297,9 @@ def stats_metadata(demographics, clinical_site, primary_symptoms,
     ## can also be done for family and natal history
 
     natalhist = "\\09_Prenatal and perinatal history (from PhenoTips)\\Maternal Age\\"
-    get_diff_parent_age(natal_history_adult, natal_history_pediatric, natalhist, logger)
+    get_diff_parent_age(natal_history_ad, natal_history_pd, natalhist, logger)
     natalhist = "\\09_Prenatal and perinatal history (from PhenoTips)\\Paternal Age\\"
-    get_diff_parent_age(natal_history_adult, natal_history_pediatric, natalhist, logger)
+    get_diff_parent_age(natal_history_ad, natal_history_pd, natalhist, logger)
 
     # show age distribution 
     show_age_distrib(demographics)
@@ -333,7 +358,7 @@ def stats_metadata(demographics, clinical_site, primary_symptoms,
 
     return demographics, clinical_site, primary_symptoms, family_history, natal_history
 
-def parental_age_analysis(natal_history, logger):
+def parental_age_analysis(demographics, natal_history, logger):
     matnatal, patnatal = \
         "\\09_Prenatal and perinatal history (from PhenoTips)\\Maternal Age\\", \
         "\\09_Prenatal and perinatal history (from PhenoTips)\\Paternal Age\\"
@@ -344,7 +369,7 @@ def parental_age_analysis(natal_history, logger):
     mat_age=mat_age[[not(isnan_mat[i]) for i in range(len(isnan_mat))]]
 
     # pat_age is the paternal age without the NaN values
-    pat_age=np.array(natal_history[oatnatal])
+    pat_age=np.array(natal_history[patnatal])
     isnan_pat=np.isnan(pat_age)
     pat_age=pat_age[[not(isnan_pat[i]) for i in range(len(isnan_pat))]]
 
@@ -385,8 +410,8 @@ def parental_age_analysis(natal_history, logger):
 
 # ### Genomics
 def load_genetic_data(variants_json, genes_json, status, patient_phen, logger):
-    variants=get_gene_data(variants_json,"Var")
-    genes=get_gene_data(genes_json,"Gene") 
+    variants=get_gene_data(patient_phen, variants_json,"Var")
+    genes=get_gene_data(patient_phen, genes_json,"Gene") 
 
     # get the list of patients that present a candidate gene or candidate variants
     list_patient_genes=list(genes.keys())
@@ -419,9 +444,9 @@ def genomic_analysis(genes, variants, logger):
 
 # # Clustering
 
-def perform_clustering(phenotypes, patient_phen, logger):
+def perform_clustering(phenotypes, patient_phen, adult_patients, pediatric_patients, logger):
     # get the index of unique phenotypes in the phenotype Dataframe
-    mat_phen_ind = get_unique_phenotypes(phenotypes)
+    mat_phen_ind = get_unique_phenotype(phenotypes)
     matrix_phen=phenotypes.drop("Patient ID",axis=1)
 
     # transform the phenotype dataframe to obtain a matrix of unique phenotypes, \
@@ -444,6 +469,7 @@ def perform_clustering(phenotypes, patient_phen, logger):
 
     # create networkx graphs for adult and pediatric network
     logger.info("Creating networkx graphs (long step).")
+    # positions can be used to plot the graph in python environment
     graph_un_adult,pos_un_adult=graph_of_patients_js(adult_patients,jac_sim_un_adult)
     graph_un_pediatric,pos_un_pediatric=graph_of_patients_js(pediatric_patients,jac_sim_un_pediatric)
 
@@ -454,8 +480,8 @@ def perform_clustering(phenotypes, patient_phen, logger):
 
     # performing clustering with Louvain method, resolutions 3 and 1.2
     logger.info("Performing clustering (long step).")
-    clusters_un_adult=compute_clusters_community(graph_un_adult, 3.0)
-    clusters_un_pediatric=compute_clusters_community(graph_un_pediatric, 1.2)
+    clusters_un_adult=compute_clusters_community(graph_un_adult, 3.0, logger)
+    clusters_un_pediatric=compute_clusters_community(graph_un_pediatric, 1.2, logger)
 
     # get indices of clusters for analysis and outliers
     ind_groups_adult = [cluster for cluster in clusters_un_adult if len(clusters_un_adult[cluster])>3] 
@@ -478,7 +504,7 @@ def odds_ratio_cluster(clusters_un_adult, clusters_un_pediatric, ind_groups_adul
 
 def phenotype_clusters(clusters_un_adult, clusters_un_pediatric, patient_phen, 
                         ind_groups_adult, ind_groups_pediatric, 
-                        ind_outliers_adult, ind_outliers_ped, logger):
+                        ind_outliers_adult, ind_outliers_ped, HPO_terms, logger):
 
     HPO_count_adult, avg_HPO_clusters_adult, CI_HPO_clusters_adult = \
             get_HPO_count(clusters_un_adult,HPO_terms)
@@ -488,9 +514,9 @@ def phenotype_clusters(clusters_un_adult, clusters_un_pediatric, patient_phen,
     # get the ranked positively and negatively associated phenotypes for patients in each cluster (phen_ranked_pos 
     # and phen_ranked_neg) 
     phen_ranked_pos_adult,phen_ranked_neg_adult = \
-            get_phen_ranked(clusters_un_adult,ind_groups_adult)
+            get_phen_ranked(clusters_un_adult, patient_phen, ind_groups_adult)
     phen_ranked_pos_pediatric,phen_ranked_neg_pediatric = \
-            get_phen_ranked(clusters_un_pediatric,ind_groups_pediatric)
+            get_phen_ranked(clusters_un_pediatric, patient_phen, ind_groups_pediatric)
 
     # concatenate all outliers for adult and pediatric network
     outlier_pat_adult,outlier_pat_ped = [],[]
@@ -530,7 +556,7 @@ def phenotype_clusters(clusters_un_adult, clusters_un_pediatric, patient_phen,
             kr_HPO_ad, kr_HPO_ped, outlier_pat_adult, outlier_pat_ped
 
 def metadata_clusters(clusters_un_adult, clusters_un_pediatric, patient_phen, 
-                        ind_groups_adult, ind_groups_pediatric, logger):
+                        ind_groups_adult, ind_groups_pediatric, demographics, logger):
 
     ageeval, ageonset = '\\00_Demographics\\Age at UDN Evaluation (in years)\\', \
                         '\\00_Demographics\\Age at symptom onset in years\\'
@@ -569,16 +595,16 @@ def metadata_clusters(clusters_un_adult, clusters_un_pediatric, patient_phen,
     logger.info(chisquare(np.array([[61,46],[106,102],[21,19],[112,122],[97,106]]).T))
 
     # KW test for Age at UDN evaluation // adult
-    kr_UDN_ad=get_stats_value(ageeval,"adult",ind_groups_adult_test,demographics_coll_adult_test)
+    kr_UDN_ad=get_stats_value(ageeval,"adult",ind_groups_adult,demographics_coll_adult, logger)
 
     # KW test for Age at UDN evaluation // pediatric
-    kr_UDN_ped=get_stats_value(ageeval,"pediatric",ind_groups_pediatric_test,demographics_coll_pediatric_test)
+    kr_UDN_ped=get_stats_value(ageeval,"pediatric",ind_groups_pediatric,demographics_coll_pediatric, logger)
 
     # KW test for Age at symptom onset // adult
-    kr_onset_ad=get_stats_value(ageonset,"adult",ind_groups_adult_test,demographics_coll_adult_test)
+    kr_onset_ad=get_stats_value(ageonset,"adult",ind_groups_adult,demographics_coll_adult, logger)
 
     # KW test for Age at symptom onset // pediatric
-    kr_onset_ped=get_stats_value(ageonset,"pediatric",ind_groups_pediatric_test,demographics_coll_pediatric_test)
+    kr_onset_ped=get_stats_value(ageonset,"pediatric",ind_groups_pediatric,demographics_coll_pediatric, logger)
 
     logger.info(
         "Kruskal Wallis test for adult network, age at evaluation : {} and age at symptom onset : {}".format(
@@ -588,7 +614,7 @@ def metadata_clusters(clusters_un_adult, clusters_un_pediatric, patient_phen,
 
     logger.info(
         "Kruskal Wallis test for adult network, age at evaluation : {} and age at symptom onset : {}".format(
-            kr_UDN_pd, kr_onset_pd
+            kr_UDN_ped, kr_onset_ped
         )
     )
     return avg_onset_adult, CI_onset_adult, avg_onset_pediatric, CI_onset_pediatric, \
@@ -691,7 +717,7 @@ def main(logger, token):
     logger.info("Computing analysis for patient breakdown.")
     phenotypes_diagnosed, phenotypes_undiagnosed, list_diagnosed_phen, list_undiagnosed_phen, \
         list_adult_diagnosed, list_adult_undiagnosed, list_pediatric_diagnosed, list_pediatric_undiagnosed, \
-        adult_patients, pediatric_patients = \
+        adult_patients, pediatric_patients, HPO_terms, all_patients = \
             patient_breakdown(patient_phen, demographics, status, phenotypes, logger)
     
     logger.info("Computing analysis of HPO large groups.")
@@ -708,7 +734,7 @@ def main(logger, token):
                 list_pediatric_undiagnosed, list_diagnosed_phen, list_undiagnosed_phen, logger)
     
     logger.info("Performing parental age analysis.")
-    parental_age_analysis(natal_history, logger)
+    parental_age_analysis(demographics, natal_history, logger)
 
     logger.info("Downloading genetic information.")
     genes, variants = load_genetic_data(FLAGS.variants_json, FLAGS.genes_json, status, patient_phen, logger)
@@ -718,7 +744,8 @@ def main(logger, token):
 
     logger.info("Performing clustering on phenotypic data.")
     clusters_un_adult, clusters_un_pediatric, ind_groups_adult, ind_groups_ped, \
-            ind_outliers_adult, ind_outliers_ped = perform_clustering(phenotypes, patient_phen, logger)
+            ind_outliers_adult, ind_outliers_ped = perform_clustering(phenotypes, patient_phen, 
+                                                                    adult_patients, pediatric_patients, logger)
 
     logger.info("Starting cluster analysis.")
     # odds ratio 
@@ -730,7 +757,7 @@ def main(logger, token):
         avg_HPO_clusters_adult, CI_HPO_clusters_adult, avg_HPO_clusters_pediatric, CI_HPO_clusters_pediatric, \
         kr_HPO_ad, kr_HPO_ped, outlier_pat_adult, outlier_pat_ped = \
             phenotype_clusters(clusters_un_adult, clusters_un_pediatric, patient_phen, ind_groups_adult,
-                ind_groups_ped, ind_outliers_adult, ind_outliers_ped, logger)
+                ind_groups_ped, ind_outliers_adult, ind_outliers_ped, HPO_terms, logger)
 
     # metadata 
     avg_onset_adult, CI_onset_adult, avg_onset_pediatric, CI_onset_pediatric, \
@@ -738,7 +765,7 @@ def main(logger, token):
             kr_UDN_ad, kr_UDN_ped, kr_onset_ad, kr_onset_ped, \
             gender_distrib_adult, gender_distrib_pediatric = \
             metadata_clusters(clusters_un_adult, clusters_un_pediatric, patient_phen, 
-                                ind_groups_adult, ind_groups_ped, logger)
+                                ind_groups_adult, ind_groups_ped, demographics, logger)
 
     logger.info("Saving the analysis tables in word documents.")
     word_tables(clusters_un_adult, avg_HPO_clusters_adult, CI_HPO_clusters_adult, gender_distrib_adult,

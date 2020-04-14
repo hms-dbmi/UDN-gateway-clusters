@@ -1,6 +1,13 @@
-"""TODO description
-    TODO import all libraries
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
+Functions for gene analysis
+
+"""
+
+__author__ = "Josephine Yates"
+__email__ = "josephine.yates@yahoo.fr"
+
 import argparse
 import sys
 import numpy as np
@@ -19,14 +26,16 @@ import xml.etree.ElementTree as ET
 import operator
 import pandas
 import csv
-from scipy.stats import mannwhitneyu
+from scipy.stats import mannwhitneyu, chisquare
 from sklearn.metrics.pairwise import pairwise_distances
 from docx import Document
 from docx.shared import Inches
 import ast
+import logging
 
 import PicSureHpdsLib
 import PicSureClient
+
 def get_gene_data(patient_phen, filename, var_or_gene):
     """Retrieve genetic data from a text file (formatted from JSON file)
     Parameters: patient_phen (dict):  dictionary with patients as keys, with values being dictionaries with 

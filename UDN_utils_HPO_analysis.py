@@ -1,6 +1,14 @@
-"""TODO write description
-    TODO comment all functions
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
+Functions for HPO analysis
+
+"""
+
+__author__ = "Josephine Yates"
+__email__ = "josephine.yates@yahoo.fr"
+
+from UDN_utils import *
 
 import argparse
 import sys
@@ -20,11 +28,12 @@ import xml.etree.ElementTree as ET
 import operator
 import pandas
 import csv
-from scipy.stats import mannwhitneyu
+from scipy.stats import mannwhitneyu, chisquare
 from sklearn.metrics.pairwise import pairwise_distances
 from docx import Document
 from docx.shared import Inches
 import ast
+import logging
 
 import PicSureHpdsLib
 import PicSureClient
@@ -120,6 +129,20 @@ def get_HPO_count_list(patient_phen, patient_list):
     HPO_list = HPO_list_pos + HPO_list_neg
 
     return HPO_list_pos, HPO_list_neg, HPO_list
+
+def get_HPO_terms(patient_phen, patient_list):
+    """Gets HPO count per patient
+    Parameters: patient_list (np.ndarray): list of patients to consider
+                patient_phen (dict) : dictionary with patients as keys, with values \
+                                    dictionaries with keys ("pos","neg") \
+                             with a list of the positive and negative phenotypes presented by each patient
+    
+    Returns : HPO_terms (dict): dictionary with patient as key and HPO term count as value
+    """
+    HPO_terms = {patient: len(list(patient_phen[patient]["pos"].values())) + \
+                        len(list(patient_phen[patient]["neg"].values())) for patient in patient_list }
+
+    return HPO_terms
 
 def get_best_phenotypes(list_patients, patient_phen, nb_of_phen, logger):
     """Shows the phenotypes the most represented in the UDN gateway for a given community of patients
