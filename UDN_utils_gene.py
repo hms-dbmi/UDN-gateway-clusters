@@ -7,6 +7,7 @@ Functions for gene analysis
 
 __author__ = "Josephine Yates"
 __email__ = "josephine.yates@yahoo.fr"
+from UDN_utils import *
 
 import argparse
 import sys
@@ -61,7 +62,7 @@ def get_gene_data(patient_phen, filename, var_or_gene):
                     genomic_data[pid][var][line.split(" ")[0].split("\n")[0]]=line.split(" ")[1].split("\n")[0]
     for patient in genomic_data:
         if not(patient in list(patient_phen.keys())):
-            del genomic_data[patient]
+            genomic_data = removekey(genomic_data, patient)
     return genomic_data
 
 def get_dist_genomic(genomic_data,var_or_gene):

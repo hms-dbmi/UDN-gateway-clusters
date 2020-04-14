@@ -61,7 +61,7 @@ def get_patient_phenotypes(phenotypes):
 
     for patient in patient_phen:
         if len(patient_phen[patient]["pos"])==0 and len(patient_phen[patient]["neg"])==0:
-            del patient_phen[patient]
+            patient_phen = removekey(patient_phen,patient)
 
     return patient_phen
 
@@ -83,7 +83,7 @@ def get_patient_eval_date(jsonfile, patient_phen):
 
     for pat in list(patient_eval_date.keys()):
         if not (pat in list(patient_phen)):
-             del patient_eval_date[pat]
+             patient_eval_date = remove_key(patient_eval_date,pat)
 
     print("Number of patients with no information on eval date : ",collec.Counter([patient_eval_date[pat] for pat in patient_eval_date])["None"])
     
@@ -124,8 +124,8 @@ def get_HPO_count_list(patient_phen, patient_list):
     Returns : HPO_list_pos, HPO_list_neg, HPO_list (np.ndarray): lists of the count of positive, \
         negative and all counts of HPO terms resp.
     """
-    HPO_list_pos = np.array([len(list(patient_phen[patient]["pos"].values())) for patient in patient_list])
-    HPO_list_neg = np.array([len(list(patient_phen[patient]["neg"].values())) for patient in patient_list])
+    HPO_list_pos = np.array([len(patient_phen[patient]["pos"]) for patient in patient_list])
+    HPO_list_neg = np.array([len(patient_phen[patient]["neg"]) for patient in patient_list])
     HPO_list = HPO_list_pos + HPO_list_neg
 
     return HPO_list_pos, HPO_list_neg, HPO_list
@@ -139,8 +139,8 @@ def get_HPO_terms(patient_phen, patient_list):
     
     Returns : HPO_terms (dict): dictionary with patient as key and HPO term count as value
     """
-    HPO_terms = {patient: len(list(patient_phen[patient]["pos"].values())) + \
-                        len(list(patient_phen[patient]["neg"].values())) for patient in patient_list }
+    HPO_terms = {patient: len(patient_phen[patient]["pos"]) + \
+                        len(patient_phen[patient]["neg"]) for patient in patient_list }
 
     return HPO_terms
 
@@ -195,9 +195,9 @@ def show_stats_HPO_counts(HPO_list,HPO_list_pos,HPO_list_neg, logger):
     Returns: None
     Shows the average and CI 95% for HPO counts
     """
-    logger.info("HPO pos average : ",np.average(HPO_list_pos),", CI 95% : ",get_CI(HPO_list_pos),", HPO pos max : ",np.max(HPO_list_pos))
-    logger.info("HPO neg average : ",np.average(HPO_list_neg),", CI 95% : ",get_CI(HPO_list_neg),", HPO neg max : ",np.max(HPO_list_neg))
-    logger.info("HPO average : ",np.average(HPO_list),", CI 95% : ",get_CI(HPO_list),", HPO max : ",np.max(HPO_list))
+    logger.info("HPO pos average : {}, CI 95% : {}, HPO pos max : {}".format(get_CI(HPO_list_pos),np.max(HPO_list_pos),np.average(HPO_list_pos)))
+    logger.info("HPO neg average : {}, CI 95% : {}, HPO neg max : {}".format(get_CI(HPO_list_neg),np.max(HPO_list_neg),np.average(HPO_list_neg)))
+    logger.info("HPO average : {}, CI 95% : {}, HPO max : {}".format(get_CI(HPO_list),np.max(HPO_list),np.average(HPO_list)))
 
 def get_large_group_HPO(phenotypes):
     """Gets the large groups of HPO hierarchy

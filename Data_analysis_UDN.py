@@ -57,6 +57,7 @@ from docx import Document
 from docx.shared import Inches
 import ast
 import logging
+import scipy.stats
 
 import PicSureHpdsLib
 import PicSureClient
@@ -129,8 +130,8 @@ def patient_breakdown(patient_phen, demographics, status, phenotypes, logger):
         demographics[age][demographics[age]<18.0].index.to_numpy()
 
     # get the list of diagnosed and undiagnosed patients
-    list_diagnosed = status.loc[status["\\13_Status\\"] == "solved"].index.values.to_numpy()
-    list_undiagnosed = status.loc[status["\\13_Status\\"] != "solved"].index.values.to_numpy()
+    list_diagnosed = status.loc[status["\\13_Status\\"] == "solved"].index.to_numpy()
+    list_undiagnosed = status.loc[status["\\13_Status\\"] != "solved"].index.to_numpy()
 
     # get the list of diagnosed or undiagnosed patients that have at least one HPO term
     list_diagnosed_phen=[patient for patient in list_diagnosed if(patient in patient_phen)]
@@ -199,22 +200,23 @@ def HPO_large_group_analysis(phenotypes, patient_phen, adult_patients, pediatric
     large_groups_HPO_count=get_large_groups_HPO_count(list_phenotypes_unique, \
         large_groups_HPO,patient_phen,all_patients)
 
-    logger.info("Total : neg : ",np.sum(list(large_groups_HPO_count["neg"].values())), \
-        " pos : ",np.sum(list(large_groups_HPO_count["pos"].values())))
+    logger.info("Total : neg : {}, pos : {}".format(np.sum(list(large_groups_HPO_count["neg"].values())), \
+        np.sum(list(large_groups_HPO_count["pos"].values()))))
 
     # get the count of large groups for positive and negative terms of adult patients
     large_groups_HPO_count_adult=get_large_groups_HPO_count(list_phenotypes_unique, \
         large_groups_HPO,patient_phen,adult_patients)
 
-    logger.info("Total adult : neg : ",np.sum(list(large_groups_HPO_count_adult["neg"].values())), \
-                " pos : ",np.sum(list(large_groups_HPO_count_adult["pos"].values())))
+    logger.info("Total adult : neg : {}, pos : {}".format(np.sum(list(large_groups_HPO_count_adult["neg"].values())), \
+        np.sum(list(large_groups_HPO_count_adult["pos"].values()))))
 
     # get the count of large groups for positive and negative terms of pediatric patients
     large_groups_HPO_count_pediatric=get_large_groups_HPO_count(list_phenotypes_unique, \
         large_groups_HPO,patient_phen,pediatric_patients)
+        
+    logger.info("Total pediatric : neg : {}, pos : {}".format(np.sum(list(large_groups_HPO_count_pediatric["neg"].values())), \
+        np.sum(list(large_groups_HPO_count_pediatric["pos"].values()))))
 
-    logger.info("Total pediatric : neg : ",np.sum(list(large_groups_HPO_count_pediatric["neg"].values())), \
-                " pos : ",np.sum(list(large_groups_HPO_count_pediatric["pos"].values())))
 
     return list_phenotypes_unique, large_groups_HPO
 

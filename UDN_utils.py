@@ -38,13 +38,22 @@ import PicSureClient
 
 
 ## General methods
+def removekey(d, key):
+    """This functions returns a copy of a dictionnary with a removed key
+    Parameters: d (dict): dictionnary
+                key: the key that must be deleted
+    Returns: copy of dictionnary d without the key 
+    """
+    r = dict(d)
+    del r[key]
+    return r
 
 def get_CI(a):
     """Returns the 95% confidence interval for a list/array a
     Parameters: a (list): list or array we want the CI for
     Returns: (tuple) with 95% confidence interval
     """
-    return st.t.interval(0.95, len(a)-1, loc=np.mean(a), scale=st.sem(a,nan_policy='omit'))
+    return scipy.stats.t.interval(0.95, len(a)-1, loc=np.mean(a), scale=scipy.stats.sem(a,nan_policy='omit'))
 
 def get_data_df(column_head, resource):
     """Enables the user to download the data as a pandas dataframe indexed by UDN IDs (through API)
