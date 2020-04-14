@@ -1,37 +1,59 @@
 # UDN-analysis
-Jupyter Notebook for conducting analysis on UDN data and creation and analysis of clusters
-
-## Clusters
-The clusters are computed with a non deterministic algorithm. To have the exact clusters analyzed in the paper, and if you have approved access to the data, I can forward the associated file.
+This repository is associated with publication "Finding Commonalities in rare diseases through the Undiagnosed Diseases Network" [ref](xxx). It allows to conduct analyses on the Undiagnosed Diseases Network (UDN) database, and cluster patients harnessing phenotypic similarity using the Louvain method. [[1]](#1).
 
 ## Prerequisites
 The following libraries must be installed: 
-```bash
-numpy
-scipy
-matplotlib
-seaborn
-community
-networkx
-collections
-os
-xml.etree.ElementTree
-PicSureHpdsLib
-PicSureClient
-operator
-pandas
 ```
 
-Here are the repo links to [PicSureHpdsLib](https://github.com/hms-dbmi/pic-sure-python-adapter-hpds) and [PicSureClient](https://github.com/hms-dbmi/pic-sure-python-client)
+argparse
+sys
+numpy
+matplotlib
+scipy
+networkx
+python-louvain
+seaborn
+collections
+os
+xml
+operator
+pandas
+csv
+sklearn
+docx 
+ast
+
+PicSureHpdsLib
+PicSureClient
+
+```
+
+The libraries PicSureHpdsLib and PicSureClient are from a working repository. Here are the repository links to [PicSureHpdsLib](https://github.com/hms-dbmi/pic-sure-python-adapter-hpds) and [PicSureClient](https://github.com/hms-dbmi/pic-sure-python-client)
+
+
+## How to
+The main body of the analysis is in the Data_analysis_UDN.py. The other scripts contain the functions necessary for computation, broken down according to the part of the analysis. The zip file xml_orphanet must be unzipped before usage, and the folder must be in the same working directory as Data_analysis_UDN.py. 
+
+Example usage from the cmd is 
+```
+python Data_analysis_UDN.py --token personal_token --json_file "path/to/file" --genes_file "path/to/gene/info" 
+-- variants_file "path/to/variant/info" 
+```
 ## Authorizations
 To have access to the UDN data, you will need IRB approval. When it is the case, you will need a token to log into the database, to add in the PicSureClient to connect.
 
-## How to
-The jupyter notebook Data_analysis_UDN comprises all the code used for the analysis of the UDN database. The jupyter notebook UDN_validation_in_Aetna comprises the SQL code used to validate the results in the Aetna claims database.
-
+## Clusters
+The clusters are computed with a non deterministic algorithm (Louvain method). 
+To have the exact clusters analyzed in the paper, pending authorized access, these can be forwarded.
 
 ## Publication
-This code supports the analysis presented in the Finding Commonalities in rare diseases through the Undiagnosed Diseases Network (publication to come).
+This code supports the analysis presented in "Finding Commonalities in rare diseases through the Undiagnosed Diseases Network"(publication to come).
+
+## References
+<a id="1">[1]</a> 
+Blondel et al. (2008). 
+Fast unfolding of communities in large networks. 
+Journal of Statistical Mechanics: Theory and Experiment, Volume 2008, October 2008.
 
 ## License
 
