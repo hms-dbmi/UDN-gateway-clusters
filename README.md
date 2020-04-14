@@ -37,6 +37,7 @@ The main body of the analysis is in the Data_analysis_UDN.py. The other scripts 
 Example usage from the cmd is 
 ```
 python Data_analysis_UDN.py --token personal_token --json_file "path/to/file" --genes_file "path/to/gene/info" 
+-- variants_file "path/to/variant/info" 
 ```
 ## Authorizations
 To have access to the UDN data, you will need IRB approval. When it is the case, you will need a token to log into the database, to add in the PicSureClient to connect.
