@@ -32,6 +32,7 @@ from docx import Document
 from docx.shared import Inches
 import ast
 import logging
+import scipy
 
 import PicSureHpdsLib
 import PicSureClient
@@ -75,23 +76,22 @@ def get_data_df(column_head, resource):
 
     return df
 
-def create_table(n_ad,a_or_p,clusters_un,avg_HPO_clusters,CI_HPO_clusters,
-                    gender_distrib,OR_diag,IC_OR,avg_onset,CI_onset,avg_UDN_eval,
-                    CI_UDN_eval,docname):
+
+def create_table(ind_clusters,a_or_p,clusters_un,avg_HPO_clusters,CI_HPO_clusters,gender_distrib,OR_diag,IC_OR,avg_onset,CI_onset,avg_UDN_eval,CI_UDN_eval,docname):
     """Creates a word document with automatically rendered table of cluster characteristics
-    Parameters: n_ad (int): number of clusters 
-                a_or_p (str): "A" or "P", changes the display 
-                clusters_un (dict): dictionnary with cluster as key and list of UDN IDs as value
-                avg_HPO_clusters (dict): dictionnary with cluster as key and avg HPO per patient as value
-                CI_HPO_clusters (dict): dictionnary with cluster as key and tuple of 95% CI for avg HPO as value
-                gender_distrib (dict): dictionnary with cluster as key and count of female/male as value
-                OR_diag (dict): dictionnary with cluster as key and OR as value
-                IC_OR (dict): dictionnary with cluster as key and tuple of 95% CI for OR as value
-                avg_onset (dict): dictionnary with cluster as key and avg onset as value
-                CI_onset (dict): dictionnary with cluster as key and tuple of 95% CI for onset as value
-                avg_UDN_eval (dict): dictionnary with cluster as key and avg UDN eval as value
-                CI_UDN_eval (dict): dictionnary with cluster as key and tuple of 95% CI for avg UDN eval as value
-                docname (str): name of document to save
+    Parameters: len(ind_clusters): number of clusters 
+                a_or_p: str, "A" or "P", changes the display 
+                clusters_un: dictionnary with cluster as key and list of UDN IDs as value
+                avg_HPO_clusters: dictionnary with cluster as key and avg HPO per patient as value
+                CI_HPO_clusters: dictionnary with cluster as key and tuple of 95% CI for avg HPO as value
+                gender_distrib: dictionnary with cluster as key and count of female/male as value
+                OR_diag: dictionnary with cluster as key and OR as value
+                IC_OR: dictionnary with cluster as key and tuple of 95% CI for OR as value
+                avg_onset: dictionnary with cluster as key and avg onset as value
+                CI_onset: dictionnary with cluster as key and tuple of 95% CI for onset as value
+                avg_UDN_eval: dictionnary with cluster as key and avg UDN eval as value
+                CI_UDN_eval: dictionnary with cluster as key and tuple of 95% CI for avg UDN eval as value
+                docname: str, name of document to save
     Returns: None
     Saves a word document with table of cluster characteristics
                 
@@ -100,45 +100,37 @@ def create_table(n_ad,a_or_p,clusters_un,avg_HPO_clusters,CI_HPO_clusters,
 
     document.add_heading('Tables'+docname, 0)
 
-    table = document.add_table(rows=1, cols=n_ad+1)
+    table = document.add_table(rows=1, cols=len(ind_clusters)+1)
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = 'Clusters'
-    for i in range(1,n_ad+1):
+    for i in range(1,len(ind_clusters)+1):
         hdr_cells[i].text = "Cluster C"+str(i)+a_or_p
     row_cells = table.add_row().cells
     row_cells[0].text = "# of patients per cluster"
-    for i in range(1,n_ad+1):
-        row_cells[i].text = str(len(clusters_un[i-1]))
+    for i in range(1,len(ind_clusters)+1):
+        row_cells[i].text = str(len(clusters_un[ind_clusters[i-1]]))
     row_cells = table.add_row().cells
     row_cells[0].text = "Female:male ratio"
-    for i in range(1,n_ad+1):
-        row_cells[i].text = \
-            str(int(np.round_(gender_distrib[i-1]["Female"]*10/gender_distrib[i-1]["Male"])))+":10"
+    for i in range(1,len(ind_clusters)+1):
+        row_cells[i].text = str(int(np.round_(gender_distrib[ind_clusters[i-1]]["Female"]*10/gender_distrib[ind_clusters[i-1]]["Male"])))+":10"
     row_cells = table.add_row().cells
     row_cells[0].text = "Avg # of HPO terms per patient"
-    for i in range(1,n_ad+1):
-        row_cells[i].text = str(np.round_(avg_HPO_clusters[i-1],decimals=1))+ \
-            " (95% CI: "+str(np.round_(CI_HPO_clusters[i-1][0],decimals=1))+ \
-                " - "+str(np.round_(CI_HPO_clusters[i-1][1],decimals=1))+")"
+    for i in range(1,len(ind_clusters)+1):
+        row_cells[i].text = str(np.round_(avg_HPO_clusters[ind_clusters[i-1]],decimals=1))+" (95% CI: "+str(np.round_(CI_HPO_clusters[ind_clusters[i-1]][0],decimals=1))+" - "+str(np.round_(CI_HPO_clusters[ind_clusters[i-1]][1],decimals=1))+")"
     row_cells = table.add_row().cells
     row_cells[0].text = "Odds ratio diagnosed"
-    for i in range(1,n_ad+1):
-        row_cells[i].text = str(np.round_(OR_diag[i-1],decimals=1))+ \
-            " (95% CI: "+str(np.round_(IC_OR[i-1]["low"],decimals=1))+ \
-                " - "+str(np.round_(IC_OR[i-1]["up"],decimals=1))+")"
+    for i in range(1,len(ind_clusters)+1):
+        row_cells[i].text = str(np.round_(OR_diag[ind_clusters[i-1]],decimals=1))+" (95% CI: "+str(np.round_(IC_OR[ind_clusters[i-1]]["low"],decimals=1))+" - "+str(np.round_(IC_OR[ind_clusters[i-1]]["up"],decimals=1))+")"
     row_cells = table.add_row().cells
     row_cells[0].text = "Average age at onset in y"
-    for i in range(1,n_ad+1):
-        row_cells[i].text = str(np.round_(avg_onset[i-1],decimals=1))+ \
-            " (95% CI: "+str(np.round_(CI_onset[i-1][0],decimals=1))+ \
-                " - "+str(np.round_(CI_onset[i-1][1],decimals=1))+")"
+    for i in range(1,len(ind_clusters)+1):
+        row_cells[i].text = str(np.round_(avg_onset[ind_clusters[i-1]],decimals=1))+" (95% CI: "+str(np.round_(CI_onset[ind_clusters[i-1]][0],decimals=1))+" - "+str(np.round_(CI_onset[ind_clusters[i-1]][1],decimals=1))+")"
     row_cells = table.add_row().cells
     row_cells[0].text = "Average age at UDN evaluation in y"
-    for i in range(1,n_ad+1):
-        row_cells[i].text = str(np.round_(avg_UDN_eval[i-1],decimals=1))+ \
-            " (95% CI: "+str(np.round_(CI_UDN_eval[i-1][0],decimals=1))+ \
-                " - "+str(np.round_(CI_UDN_eval[i-1][1],decimals=1))+")"
+    for i in range(1,len(ind_clusters)+1):
+        row_cells[i].text = str(np.round_(avg_UDN_eval[ind_clusters[i-1]],decimals=1))+" (95% CI: "+str(np.round_(CI_UDN_eval[ind_clusters[i-1]][0],decimals=1))+" - "+str(np.round_(CI_UDN_eval[ind_clusters[i-1]][1],decimals=1))+")"
     document.add_page_break()
+
     document.save(docname+'.docx')
 
 def create_stat_table(kr_HPO_ad,kr_HPO_ped,kr_UDN_ad,kr_UDN_ped,kr_onset_ad,kr_onset_ped,docname):

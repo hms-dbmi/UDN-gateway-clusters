@@ -32,6 +32,8 @@ from UDN_utils_gene import *
 from UDN_utils_HPO_analysis import *
 from UDN_utils_parental_age import *
 from UDN_utils_primary_symptoms import *
+from UDN_utils_diagnostics import *
+from UDN_utils_SVC import *
 
 import argparse
 import sys
@@ -58,6 +60,7 @@ from docx.shared import Inches
 import ast
 import logging
 import scipy.stats
+from netneurotools import cluster
 
 import PicSureHpdsLib
 import PicSureClient
@@ -482,17 +485,27 @@ def perform_clustering(phenotypes, patient_phen, adult_patients, pediatric_patie
 
     # performing clustering with Louvain method, resolutions 3 and 1.2
     logger.info("Performing clustering (long step).")
-    clusters_un_adult=compute_clusters_community(graph_un_adult, 3.0, logger)
-    clusters_un_pediatric=compute_clusters_community(graph_un_pediatric, 1.2, logger)
+    consensus_matrix_ad, df_louvain_ad = get_consensus_matrix(adult_patients,graph_un_adult,2,10,logger)
+    consensus_clustering_labels_ad = cluster.find_consensus(consensus_matrix_ad.values, seed=1234)
+    consensus_matrix_ped,df_louvain_ped = get_consensus_matrix(pediatric_patients,graph_un_pediatric,1.2,10,logger)
+    consensus_clustering_labels_ped = cluster.find_consensus(consensus_matrix_ped.values, seed=1234)
+
+    clusters_ad = {cluster: [] for cluster in np.unique(consensus_clustering_labels_ad)}
+    for i,pat in enumerate(list(df_louvain_ad.index)):
+        clusters_ad[consensus_clustering_labels_ad[i]].append(pat)
+        
+    clusters_ped = {cluster: [] for cluster in np.unique(consensus_clustering_labels_ped)}
+    for i,pat in enumerate(list(df_louvain_ped.index)):
+        clusters_ped[consensus_clustering_labels_ped[i]].append(pat)
 
     # get indices of clusters for analysis and outliers
-    ind_groups_adult = [cluster for cluster in clusters_un_adult if len(clusters_un_adult[cluster])>3] 
-    ind_groups_ped = [cluster for cluster in clusters_un_pediatric if len(clusters_un_pediatric[cluster])>3] 
-    ind_outliers_adult = [cluster for cluster in clusters_un_adult if len(clusters_un_adult[cluster])<=3] 
-    ind_outliers_ped = [cluster for cluster in clusters_un_pediatric if len(clusters_un_pediatric[cluster])<=3] 
+    ind_groups_adult = [cluster for cluster in clusters_ad if len(clusters_ad[cluster])>5] 
+    ind_groups_ped = [cluster for cluster in clusters_ped if len(clusters_ped[cluster])>5] 
+    ind_outliers_adult = [cluster for cluster in clusters_ad if len(clusters_ad[cluster])<=3] 
+    ind_outliers_ped = [cluster for cluster in clusters_ped if len(clusters_ped[cluster])<=3] 
 
-    return clusters_un_adult, clusters_un_pediatric, ind_groups_adult, ind_groups_ped, \
-            ind_outliers_adult, ind_outliers_ped
+    return clusters_ad, clusters_ped, ind_groups_adult, ind_groups_ped, \
+            ind_outliers_adult, ind_outliers_ped, consensus_clustering_labels_ad, consensus_clustering_labels_ped
 
 # ### Cluster analysis
 
@@ -625,24 +638,24 @@ def metadata_clusters(clusters_un_adult, clusters_un_pediatric, patient_phen,
 
 # ## Creating tables
 
-def word_tables(clusters_un_adult,avg_HPO_clusters_adult,CI_HPO_clusters_adult,
+def word_tables(clusters_un_adult,ind_groups_adult,avg_HPO_clusters_adult,CI_HPO_clusters_adult,
             gender_distrib_adult,OR_diag_adult,IC_adult,
             avg_onset_adult,CI_onset_adult,avg_UDN_eval_adult,
-            CI_UDN_eval_adult, clusters_un_pediatric,avg_HPO_clusters_pediatric,CI_HPO_clusters_pediatric,
+            CI_UDN_eval_adult, clusters_un_pediatric,ind_groups_ped,avg_HPO_clusters_pediatric,CI_HPO_clusters_pediatric,
             gender_distrib_pediatric,OR_diag_pediatric,IC_pediatric,
             avg_onset_pediatric,CI_onset_pediatric,avg_UDN_eval_pediatric,
             CI_UDN_eval_pediatric, kr_HPO_ad,kr_HPO_ped,kr_UDN_ad,kr_UDN_ped,
             kr_onset_ad,kr_onset_ped, logger):
     
-    n_ped,n_ad=5,4
 
 
-    create_table(n_ad,"A",clusters_un_adult,avg_HPO_clusters_adult,CI_HPO_clusters_adult,
+
+    create_table(ind_groups_adult,"A",clusters_un_adult,avg_HPO_clusters_adult,CI_HPO_clusters_adult,
                 gender_distrib_adult,OR_diag_adult,IC_adult,
                 avg_onset_adult,CI_onset_adult,avg_UDN_eval_adult,
                 CI_UDN_eval_adult,"adult_table")
 
-    create_table(n_ped,"P",clusters_un_pediatric,avg_HPO_clusters_pediatric,CI_HPO_clusters_pediatric,
+    create_table(ind_groups_pediatric,"P",clusters_un_pediatric,avg_HPO_clusters_pediatric,CI_HPO_clusters_pediatric,
                 gender_distrib_pediatric,OR_diag_pediatric,IC_pediatric,
                 avg_onset_pediatric,CI_onset_pediatric,avg_UDN_eval_pediatric,
                 CI_UDN_eval_pediatric,"pediatric_table")
@@ -746,7 +759,8 @@ def main(logger, token):
 
     logger.info("Performing clustering on phenotypic data.")
     clusters_un_adult, clusters_un_pediatric, ind_groups_adult, ind_groups_ped, \
-            ind_outliers_adult, ind_outliers_ped = perform_clustering(phenotypes, patient_phen, 
+            ind_outliers_adult, ind_outliers_ped, consensus_clustering_labels_ad, \
+            consensus_clustering_labels_ped = perform_clustering(phenotypes, patient_phen, 
                                                                     adult_patients, pediatric_patients, logger)
 
     logger.info("Starting cluster analysis.")
@@ -770,9 +784,9 @@ def main(logger, token):
                                 ind_groups_adult, ind_groups_ped, demographics, logger)
 
     logger.info("Saving the analysis tables in word documents.")
-    word_tables(clusters_un_adult, avg_HPO_clusters_adult, CI_HPO_clusters_adult, gender_distrib_adult,
+    word_tables(clusters_un_adult, ind_groups_adult, avg_HPO_clusters_adult, CI_HPO_clusters_adult, gender_distrib_adult,
                 OR_diag_adult, IC_adult, avg_onset_adult, CI_onset_adult, avg_UDN_eval_adult, 
-                CI_UDN_eval_adult, clusters_un_pediatric, avg_HPO_clusters_pediatric, 
+                CI_UDN_eval_adult, clusters_un_pediatric, ind_groups_ped, avg_HPO_clusters_pediatric, 
                 CI_HPO_clusters_pediatric, gender_distrib_pediatric, OR_diag_pediatric, 
                 IC_pediatric, avg_onset_pediatric, CI_onset_pediatric, avg_UDN_eval_adult,
                 CI_UDN_eval_pediatric, kr_HPO_ad, kr_HPO_ped, kr_UDN_ad, kr_UDN_ped,
@@ -786,6 +800,18 @@ def main(logger, token):
     get_disease_enrichment_analysis(phen_ranked_pos_adult, phen_ranked_pos_pediatric, mapping_HPO,
                                     syn_mapping, HPO_Orphadata, clusters_un_adult, clusters_un_pediatric, 
                                     outlier_pat_adult, outlier_pat_ped, all_diseases, logger)
+
+    logger.info("Finding link to diagnostics.")
+    diagnostics_ad = get_diagnoses(clusters_un_adult,diagnostics,logger)
+    diagnostics_ped = get_diagnoses(clusters_un_pediatric,diagnostics,logger)
+    log_diagnoses(diagnostics_ad,logger)
+    log_diagnoses(diagnostics_ped,logger)
+
+    logger.info("Performing SVC prediction.")
+    diseases_binary_HPO,mat_phen_pediatric = get_diseases_binary(phenotypes,mapping_HPO,syn_mapping,logger)
+    svc,y_pred = SVC_pred(ind_groups_ped,clusters_un_pediatric,mat_phen_pediatric,
+                            diseases_binary_HPO,consensus_clustering_labels_ped,logger)
+
 
 if __name__=="__main__":
 

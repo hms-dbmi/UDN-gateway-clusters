@@ -96,3 +96,30 @@ def compute_clusters_community(graph,resolution,logger):
     logger.info("Number of clusters with less than 3 patients (outliers) : {}".format(count))
     return clusters
 
+def get_consensus_matrix(patients,graph,resolution,n_runs,logger):
+    """Gets the consensus matrix for n fold consensus clustering
+    Parameters : patients (list): list of patients to consider for clustering
+                graph (networkx.Graph): graph of UDN patients computed using the pairwise 
+                                similarity between patients
+                resolution (float): resolution for the Louvain method
+                n_runs (int): number of runs to perform for consensus clustering
+                logger (Logger): logger
+
+    Returns: clusters (dict): dictionary with the cluster number as key and a list containing all 
+                                the patients in the cluster as value
+    """
+    logger.info("Getting consensus matrix for {} fold consensus clustering".format(n_runs))
+    consensus_matrix = []
+    for r in range(n_runs):
+        clusters_louvain=compute_clusters_community(graph, resolution, logger)
+        df_louvain = pd.DataFrame(np.zeros((len(patients),1)),index=patients,columns=["cluster"])
+        for cluster in clusters_louvain:
+            for pat in clusters_louvain[cluster]:
+                df_louvain.loc[pat]=cluster
+        df_louvain_new = df_louvain.copy()
+        df_louvain=df_louvain.reset_index(drop=True)
+        if len(consensus_matrix)==0:
+            consensus_matrix = df_louvain
+        else:
+            consensus_matrix = pd.concat([consensus_matrix,df_louvain],axis=1)
+    return consensus_matrix,df_louvain_new
