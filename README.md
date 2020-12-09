@@ -42,10 +42,6 @@ python Data_analysis_UDN.py --token personal_token --json_file "path/to/file" --
 ## Authorizations
 To have access to the UDN data, you will need IRB approval. When it is the case, you will need a token to log into the database, to add in the PicSureClient to connect.
 
-## Clusters
-The clusters are computed with a non deterministic algorithm (Louvain method). 
-To have the exact clusters analyzed in the paper, pending authorized access, these can be forwarded.
-
 ## Publication
 This code supports the analysis presented in "Finding Commonalities in rare diseases through the Undiagnosed Diseases Network"(publication to come).
 
