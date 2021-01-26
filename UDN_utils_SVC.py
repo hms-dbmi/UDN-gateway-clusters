@@ -40,8 +40,10 @@ import PicSureHpdsLib
 import PicSureClient
 
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, hamming_loss, balanced_accuracy_score, f1_score
+from sklearn.model_selection import train_test_split, GridSearchCV, KFold
+
+import pickle
 
 def get_HPO_ids(phenotype_names,mapping_HPO,syn_mapping):
     ids = []
@@ -88,22 +90,70 @@ def SVC_pred(ind_clusters_ped,clusters_ped,mat_phen_pediatric,diseases_binary_HP
     for cl in ind_clusters_ped:
         patients_ped_to_keep+=clusters_ped[cl]
     ind_patients_to_keep = [i for i in range(len(list(mat_phen_pediatric.index))) if list(mat_phen_pediatric.index)[i] in patients_ped_to_keep ]
-    cv_score = []
-    for fold in range(10):
-        X_train, X_test, y_train, y_test = train_test_split(mat_phen_pediatric.iloc[ind_patients_to_keep],consensus_clustering_labels_ped[ind_patients_to_keep],test_size=0.2)
-        jac_sim_train = 1 - pairwise_distances(X_train, metric = "jaccard")
-        jac_sim_test = 1 - pairwise_distances(X_test, X_train, metric = "jaccard")
-        svc = SVC(kernel="precomputed",class_weight="balanced",C=4)
-        svc.fit(jac_sim_train,y_train)
-        y_pred = svc.predict(jac_sim_test)
-        cv_score.append(accuracy_score(y_test,y_pred))
-        ## CV 10 fold 0.90
-    logger.info("CV 10-fold mean accuracy : {}".format(np.mean(cv_score)))
-    jac_sim_train = 1 - pairwise_distances(mat_phen_pediatric.iloc[ind_patients_to_keep], metric = "jaccard")
-    dis_sim_ped = 1 - pairwise_distances(diseases_binary_HPO, mat_phen_pediatric.iloc[ind_patients_to_keep], metric = "jaccard")
-    svc = SVC(kernel="precomputed",class_weight="balanced",C=4)
-    svc.fit(jac_sim_train,consensus_clustering_labels_ped[ind_patients_to_keep])
-    y_pred = svc.predict(dis_sim_ped)
-    logger.info("The predictions for standard patients of diseases are {}".format(y_pred))
-    return svc,y_pred
+    mat_to_keep, consensus_to_keep = mat_phen_pediatric.iloc[ind_patients_to_keep],consensus_clustering_labels_ped[ind_patients_to_keep]
+    
+    X_train, X_test, y_train, y_test = train_test_split(mat_phen_pediatric.iloc[ind_patients_to_keep],consensus_clustering_labels_ped[ind_patients_to_keep],test_size=0.2)
+    
+    cv_score = {}
+    for C in np.linspace(0.01,1,5):
+        cv_score[C] = []
+        for fold_index, test_index in kf.split(X_train):
+
+            X_fold, X_val, y_fold, y_val = X_train.values[fold_index],X_train.values[test_index], \
+                                            y_train[fold_index], \
+                                            y_train[test_index]
+            jac_sim_fold = 1 - pairwise_distances(X_fold, metric = "jaccard")
+            jac_sim_val = 1 - pairwise_distances(X_val, X_fold, metric = "jaccard")
+            svc = SVC(kernel="precomputed",class_weight="balanced",C=C)
+            svc.fit(jac_sim_fold,y_fold)
+            y_pred = svc.predict(jac_sim_val)
+            cv_score[C].append(accuracy_score(y_val,y_pred))
+        logger.info("Mean CV 10-fold score for C = {}: {}".format(C,np.mean(cv_score[C])))
+        
+    jac_sim_train_small = 1 - pairwise_distances(X_train, metric = "jaccard")
+    jac_sim_ped_test_train = 1 - pairwise_distances(X_test, X_train, metric = "jaccard")
+    svc = SVC(kernel="precomputed",class_weight="balanced",C=0.75)
+    svc.fit(jac_sim_train_small,y_train)
+    y_pred = svc.predict(jac_sim_ped_test_train)
+    logger.info("Hamming loss jaccard svc: {}".format(hamming_loss(y_test,y_pred)))
+    logger.info("Accuracy jaccard svc: {}".format(accuracy_score(y_test,y_pred)))
+    logger.info("Balanced Accuracy jaccard svc: {}".format(balanced_accuracy_score(y_test,y_pred)))
+    
+    jac_sim_train = 1 - pairwise_distances(mat_to_keep, metric = "jaccard")
+    dis_sim_ped = 1 - pairwise_distances(diseases_binary_HPO, X_train, metric = "jaccard")
+    y_pred_dis = svc.predict(dis_sim_ped)
+    logger.info("The predictions for standard patients of diseases are {}".format(y_pred_dis))
+    filename = 'svc_model.sav'
+    pickle.dump(svc, open(filename, 'wb'))
+    return svc,y_pred_dis
+
+def SVC_pred_hpo(ind_clusters_ped,clusters_ped,mat_phen_pediatric,diseases_binary_HPO,consensus_clustering_labels_ped,logger):
+    patients_ped_to_keep = []
+    for cl in ind_clusters_ped:
+        patients_ped_to_keep+=clusters_ped[cl]
+    ind_patients_to_keep = [i for i in range(len(list(mat_phen_pediatric.index))) if list(mat_phen_pediatric.index)[i] in patients_ped_to_keep ]
+    mat_to_keep, consensus_to_keep = mat_phen_pediatric.iloc[ind_patients_to_keep],consensus_clustering_labels_ped[ind_patients_to_keep]
+    
+    X_train, X_test, y_train, y_test = train_test_split(mat_phen_pediatric.iloc[ind_patients_to_keep],consensus_clustering_labels_ped[ind_patients_to_keep],test_size=0.2)
+    
+    cv_score = {}
+    parameters_svc = {"kernel":("rbf","poly"), "C":np.linspace(0.75,3,5),"class_weight":["balanced"],"gamma":["scale"]}
+    svc_hpo = SVC()
+    clf = GridSearchCV(svc_hpo,parameters_svc,scoring="balanced_accuracy",cv=10)
+    clf.fit(X_train.values,y_train)
+    y_pred_hpo = clf.predict(X_test)
+    
+    logger.info("Hamming loss hpo svc: {}".format(hamming_loss(y_test,y_pred_hpo)))
+    logger.info("Accuracy hpo svc: {}".format(accuracy_score(y_test,y_pred_hpo)))
+    logger.info("Balanced Accuracy hpo svc: {}".format(balanced_accuracy_score(y_test,y_pred_hpo)))
+    logger.info("F1 macro hpo svc: {}".format(f1_score(y_test,y_pred_hpo,average="macro")))
+    logger.info("F1 weighted hpo svc: {}".format(f1_score(y_test,y_pred_hpo,average="weighted")))
+    
+    y_pred_hpo_dis = clf.predict(diseases_binary_HPO)
+    logger.info("The predictions for standard patients of diseases are {}".format(y_pred_hpo_dis))
+    filename = 'svc_model_hpo.sav'
+    pickle.dump(svc, open(filename, 'wb'))
+    return clf.best_estimator_,y_pred_hpo_dis
+
+
 
