@@ -811,6 +811,8 @@ def main(logger, token):
     diseases_binary_HPO,mat_phen_pediatric = get_diseases_binary(phenotypes,mapping_HPO,syn_mapping,logger)
     svc,y_pred = SVC_pred(ind_groups_ped,clusters_un_pediatric,mat_phen_pediatric,
                             diseases_binary_HPO,consensus_clustering_labels_ped,logger)
+    svc_hpo,y_pred_hpo = SVC_pred_hpo(ind_groups_ped,clusters_un_pediatric,mat_phen_pediatric,
+                            diseases_binary_HPO,consensus_clustering_labels_ped,logger)
 
 
 if __name__=="__main__":
