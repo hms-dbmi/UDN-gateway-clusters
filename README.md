@@ -39,6 +39,7 @@ Example usage from the cmd is
 python Data_analysis_UDN.py --token personal_token --json_file "path/to/file" --genes_file "path/to/gene/info" 
 -- variants_file "path/to/variant/info" 
 ```
+The file mapping_HPO_PheCode_ICD9.10 contains the mapping used for the bootstrap analysis.
 
 ## Assignment of new patients using HPO data
 The model "svc_model_hpo.sav" is a pretrained SVC model on the UDN data that allows for classification of new patients into the described clusters using HPO terms only. To assign new patients one must first format the HPO terms associated to a binary vector (1 for presence of term, 0 else) using the same headings as the SVC was trained with (provided in the HPO_columns.csv file). New assignment is then very simple: 
