@@ -1,5 +1,5 @@
 # UDN-analysis
-This repository is associated with publication "Finding Commonalities in rare diseases through the Undiagnosed Diseases Network" [ref](xxx). It allows to conduct analyses on the Undiagnosed Diseases Network (UDN) database, and cluster patients harnessing phenotypic similarity using the Louvain method. [[1]](#1).
+This repository is associated with publication "Finding Commonalities in rare diseases through the Undiagnosed Diseases Network" [[2](#2). It allows to conduct analyses on the Undiagnosed Diseases Network (UDN) database, and cluster patients harnessing phenotypic similarity using the Louvain method. [[1]](#1).
 
 ## Prerequisites
 The following libraries must be installed: 
@@ -67,6 +67,12 @@ This code supports the analysis presented in "Finding Commonalities in rare dise
 Blondel et al. (2008). 
 Fast unfolding of communities in large networks. 
 Journal of Statistical Mechanics: Theory and Experiment, Volume 2008, October 2008.
+
+<a id="2">[2]</a> 
+Yates et al. (2021). 
+Finding commonalities in rare diseases through the undiagnosed diseases network. 
+Journal of the American Medical Informatics Association (JAMIA), May 2021.
+https://doi.org/10.1093/jamia/ocab050
 
 ## License
 
