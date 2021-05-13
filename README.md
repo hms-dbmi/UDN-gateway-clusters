@@ -1,5 +1,5 @@
 # UDN-analysis
-This repository is associated with publication "Finding Commonalities in rare diseases through the Undiagnosed Diseases Network" [[2](#2). It allows to conduct analyses on the Undiagnosed Diseases Network (UDN) database, and cluster patients harnessing phenotypic similarity using the Louvain method. [[1]](#1).
+This repository is associated with publication "Finding Commonalities in rare diseases through the Undiagnosed Diseases Network" [[2]](#2). It allows to conduct analyses on the Undiagnosed Diseases Network (UDN) database, and cluster patients harnessing phenotypic similarity using the Louvain method. [[1]](#1).
 
 ## Prerequisites
 The following libraries must be installed: 
