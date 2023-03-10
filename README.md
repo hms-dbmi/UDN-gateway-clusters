@@ -60,7 +60,8 @@ For investigators with UDN access, the svc_model.sav can be used. It uses precom
 To have access to the UDN data, you will need IRB approval. When it is the case, you will need a token to log into the database, to add in the PicSureClient to connect.
 
 ## Publication
-This code supports the analysis presented in "Finding Commonalities in rare diseases through the Undiagnosed Diseases Network"(publication to come).
+This code supports the analysis presented in "Finding Commonalities in rare diseases through the Undiagnosed Diseases Network", Journal of the American Medical Informatics Association (JAMIA), May 2021.
+https://doi.org/10.1093/jamia/ocab050.
 
 ## References
 <a id="1">[1]</a> 
